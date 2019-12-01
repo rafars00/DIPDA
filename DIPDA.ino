@@ -1,5 +1,14 @@
-//Programa : Temperatura e umidade com o DHT11 e LCD 16x2
-//Autor : Mari, Pedro, Rafa
+/*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*Programa DIPDA (Despertador Inclusivo para Pessoas com Deficiência Auditiva
+*Projeto desenvolvido na disciplina de Oficinas de Integração 1 do curso de
+*Engenharia de Computação da UTFPR-CT.
+*
+*Autores: Mariana Gomes, Pedro Ostroschi, Rafael Rosa
+*Turma: S71/S72
+*/
+
+/*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+//Includes:
 
 #include <Wire.h>
 #include <EEPROM.h>
@@ -7,14 +16,13 @@
 #include <SoftwareSerial.h> //Biblioteca bluetooth
 
 LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7,3, POSITIVE);
-//SoftwareSerial mySerial(2, 3); // rx e tx, do bluetooth
 
 #include <DHT.h> //Carrega a biblioteca DHT
-#include <DS1307.h>
+#include <DS1307.h> //Carrega a biblioteca do RTC
 #include <string.h>
 
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-//defines:
+//Defines:
 
 //Define a ligação ao pino de dados do sensor
 #define DHTPIN A0
@@ -22,18 +30,18 @@ LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7,3, POSITIVE);
 //Define o tipo de sensor DHT utilizado
 #define DHTTYPE DHT11
 
-#define buttonUp 8 // botao up no pino digital 8
-#define buttonOk 9 // botao ok no pino digital 10
-#define buttonDown 10 // botao down no pino digital 9
-#define buttonEsc 11 // botao esc
+#define buttonUp 8 //Botão 'up' no pino digital 8
+#define buttonOk 9 //Botão 'ok' no pino digital 9
+#define buttonDown 10 //Botão 'down' no pino digital 10
+#define buttonEsc 11 //Botão'esc' no pino digital 11
 
-#define pinBuzzer 6
-#define pinVibracall 7
+#define pinBuzzer 6 //Buzzer no pino digital 6
+#define pinVibracall 7 //Vibracall no pino digital 7
 
-#define pinLDR A1
+#define pinLDR A1 //LDRs no pino analógico 1
 
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-//variaveis globais
+//Variáveis globais:
 
 DHT dht(DHTPIN, DHTTYPE);
 DS1307 rtc(A3, A2);
@@ -41,17 +49,21 @@ DS1307 rtc(A3, A2);
 //state = qual menu eu to: 1 = inicio, 2 = escolher alterar horario ou alarme, 3 = alterar horario, 4 = alterar alarme
 int state = 1;
 
-//essa variável é uma flag para ver quando está despertando
-//0 = nao despertando, 1 = despertando
+//flag para ver quando está despertando
 boolean despertando = false;
+
+//flag para ver quando está no modo soneca
 boolean soneca = false;
 
-//variaveis dos botoes
+//variáveis dos botões
 int bUp = 0, bOk = 0, bDown = 0, bESC = 0;
 int bUp_ant = 0, bOk_ant = 0, bDown_ant = 0, bESC_ant = 0;
+
+//valor no LDR
 int val_LDR = 500;
 int val_LDR_ant = 500;
 
+//variáveis para controlar os tempos
 unsigned long delay1 = 0;
 unsigned long delay_buzzer = 0;
 unsigned long delay_alarme = 0;
@@ -62,10 +74,6 @@ int h = 0, m = 0, s = 0;
 
 //horas e minutos configurados do alarme
 int h_alarme = 0, m_alarme = 0;
-
-//horas, minutos e segundos que o usuario está configurando no menu (se ele confirmar
-//as alterações, os valores dessas variáveis vão para as variáveis do alarme de fato)
-//int h_alarme_provisorio = 0, m_alarme_provisorio = 0, s_alarme_provisorio = 0; 
 
 //Array simbolo grau
 byte grau[8] ={ B00001100,
@@ -78,7 +86,7 @@ byte grau[8] ={ B00001100,
                 B00000000,};
 
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-//funções dos menus
+//Função de checar alarme:
 
 void checaAlarme()
 {
@@ -97,9 +105,9 @@ void checaAlarme()
         bESC = digitalRead(buttonEsc);
         val_LDR = analogRead(pinLDR);
         
-        if(val_LDR < 300) //se mirar com o laser, para de despertar até algo acontecer
+        if(val_LDR < 300) //se mirar com o laser, para de despertar
         {
-          if(val_LDR_ant > 300)
+          if(val_LDR_ant > 300) //se é a primeira vez que o valor fica menor que 300
           {
             tempo_LDR = millis(); 
             delay_buzzer = millis();
@@ -121,7 +129,6 @@ void checaAlarme()
                 h_alarme += 1;
               }
               soneca = true;
-              //contador_LDR += 1;
             }
 
             if((millis() - delay_buzzer) > 1000)
@@ -213,6 +220,9 @@ void checaAlarme()
   }
 }
 
+/*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+//Funções das telas do display:
+
 void telaInicial(float temperatura)
 {
   //printar coisas no display (arrumar)
@@ -292,7 +302,7 @@ void escolherAlteracao()
     }
     else if(bOk == LOW && bOk_ant == HIGH) //se o usuário estiver no state 2 e apertar "OK"
     {
-      if((millis() - delay1) > 100) //na verdade eu nem sei se precisa desse delay. veremos amanha no teste
+      if((millis() - delay1) > 100)
       {
         if(despertando == 1)
         {
@@ -346,6 +356,9 @@ void escolherAlteracao()
   }
   
 }
+
+/*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+//Menu alterar horário:
 
 void printarTelaAlterarHorario(int posicao_selecionada, int h, int m, int s)
 {
@@ -611,6 +624,9 @@ void alterarHorario()
   }
 }
 
+/*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+//Menu alterar alarme:
+
 void printarTelaAlterarAlarme(int posicao_selecionada, int h_alarme_provisorio, int m_alarme_provisorio)
 {
     String hora = String("");
@@ -801,17 +817,18 @@ void alterarAlarme()
   }
 }
 
+/*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+//Setup e loop:
 
 void setup()
 {
-//  mySerial.begin(38400); //Inicializa o bluetooth
   Serial.begin(9600); //Inicializa a serial
   lcd.begin(16,2); //Inicializa LCD
   lcd.clear(); //Limpa o LCD
   //Cria o caractere customizado com o simbolo do grau
   lcd.createChar(0, grau);
 
-  //Led como alarme 
+  //Outputs e inputs
   pinMode(pinBuzzer, OUTPUT);
   pinMode(pinVibracall, OUTPUT);
   pinMode(buttonUp, INPUT);
@@ -824,15 +841,16 @@ void setup()
   
   //As linhas abaixo setam a data e hora do modulo
   //e podem ser comentada apos a primeira utilizacao
-  rtc.setDOW(SATURDAY);      //Define o dia da semana
+  //rtc.setDOW(SATURDAY);      //Define o dia da semana
   //rtc.setTime(13, 45, 0);     //Define o horario
-  rtc.setDate(30, 11, 2019);   //Define o dia, mes e ano
+  //rtc.setDate(30, 11, 2019);   //Define o dia, mes e ano
 
   //atribui às variáveis de hora, minuto e segundo os valores que estão no rtc
   h = rtc.getTime().hour;
   m = rtc.getTime().min;
   s = rtc.getTime().sec;
 
+  //atribui às variáveis do alarme os valores que estão na memória do arduino
   h_alarme = EEPROM.read(0);
   m_alarme = EEPROM.read(1);
 
@@ -850,9 +868,8 @@ void loop()
 //variaveis com temperatura e umidade
 //float umidade = dht.readHumidity(); //Le o valor da umidade
 float temperatura = dht.readTemperature(); //Le o valor da temperatura
-Serial.print(temperatura);
-Serial.print("\n");
-
+//Serial.print(temperatura);
+//Serial.print("\n");
 
 bUp = digitalRead(buttonUp);
 bOk = digitalRead(buttonOk);
@@ -879,7 +896,6 @@ switch(state)
           state = 2; 
           Serial.print("foi para o estado 2\n");
           lcd.clear();
-          //delay(1000);
         }
         delay1 = millis();
       }
@@ -896,11 +912,5 @@ switch(state)
     alterarAlarme();
     break;
 }
- 
-//Mostra o simbolo do grau quadrado
-//lcd.print((char)223);
-
-//Mostra o simbolo do grau formado pelo array
-  //lcd.write((byte)0);
 
 }
