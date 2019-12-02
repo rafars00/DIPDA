@@ -60,12 +60,13 @@ int bUp = 0, bOk = 0, bDown = 0, bESC = 0;
 int bUp_ant = 0, bOk_ant = 0, bDown_ant = 0, bESC_ant = 0;
 
 //valor no LDR
-int val_LDR = 500;
-int val_LDR_ant = 500;
+int val_LDR = 600;
+int val_LDR_ant = 600;
 
 //variáveis para controlar os tempos
 unsigned long delay1 = 0;
 unsigned long delay_buzzer = 0;
+unsigned long delay_buzzer2 = 0;
 unsigned long delay_alarme = 0;
 unsigned long tempo_LDR = 0;
 
@@ -110,9 +111,9 @@ void checaAlarme()
           if(val_LDR_ant > 300) //se é a primeira vez que o valor fica menor que 300
           {
             tempo_LDR = millis(); 
-            delay_buzzer = millis();
+            delay_buzzer2 = millis();
             digitalWrite(pinBuzzer, LOW);
-            digitalWrite(pinVibracall, LOW);
+            digitalWrite(pinVibracall, HIGH);
           }
           if((millis() - tempo_LDR) > (contador_LDR*1000)) //tempo segurando laser no LDR > 1 segundo
           {
@@ -131,21 +132,21 @@ void checaAlarme()
               soneca = true;
             }
 
-            if((millis() - delay_buzzer) > 1000)
+            if((millis() - delay_buzzer2) > 1000)
             {
               digitalWrite(pinBuzzer, HIGH);
-              digitalWrite(pinVibracall, HIGH);
-            }
-            
-            if((millis() - delay_buzzer) < 1000)
-            {
-              digitalWrite(pinBuzzer, LOW);
               digitalWrite(pinVibracall, LOW);
             }
             
-            if((millis() - delay_buzzer) > 1200)
+            if((millis() - delay_buzzer2) < 1000)
             {
-              delay_buzzer = millis();
+              digitalWrite(pinBuzzer, LOW);
+              digitalWrite(pinVibracall, HIGH);
+            }
+            
+            if((millis() - delay_buzzer2) > 1200)
+            {
+              delay_buzzer2 = millis();
               contador_LDR += 1;
             }
           }
@@ -153,9 +154,11 @@ void checaAlarme()
           {
             despertando = false;
             digitalWrite(pinBuzzer, LOW); // buzzer para de tocar
-            digitalWrite(pinVibracall, LOW); // vibracall para de vibrar
+            digitalWrite(pinVibracall, HIGH); // vibracall para de vibrar
             h_alarme = EEPROM.read(0);
             m_alarme = EEPROM.read(1);
+            val_LDR = 600;
+            val_LDR_ant = 600;
           }
         }
         else //se nao estiver mirando com o laser, continua despertando
@@ -163,19 +166,21 @@ void checaAlarme()
           if(soneca == true)
           {
             despertando = false;
+            val_LDR = 500;
+            val_LDR_ant = 500;
           }
           else
           {
-            if((millis() - delay_buzzer) > 400)
+            if((millis() - delay_buzzer) > 500)
             {
               digitalWrite(pinBuzzer, HIGH);
-              digitalWrite(pinVibracall, HIGH);
+              digitalWrite(pinVibracall, LOW);
             }
             
-            if((millis() - delay_buzzer) < 400)
+            if((millis() - delay_buzzer) < 500)
             {
               digitalWrite(pinBuzzer, LOW);
-              digitalWrite(pinVibracall, LOW);
+              digitalWrite(pinVibracall, HIGH);
             }
             
             if((millis() - delay_buzzer) > 1000)
@@ -190,12 +195,14 @@ void checaAlarme()
         {
           despertando = false;
           digitalWrite(pinBuzzer, LOW); // buzzer para  
-          digitalWrite(pinVibracall, LOW); // vibracall para
+          digitalWrite(pinVibracall, HIGH); // vibracall para
           
           //se o alarme for o da soneca, volta pro que tava configurado antes
           h_alarme = EEPROM.read(0);
           m_alarme = EEPROM.read(1);
           
+          val_LDR = 500;
+          val_LDR_ant = 500;
         }
         else if(bESC == LOW && bESC_ant == HIGH)
         {
@@ -211,6 +218,8 @@ void checaAlarme()
             m_alarme -= 55;
             h_alarme += 1;
           }
+          val_LDR = 500;
+          val_LDR_ant = 500;
         }
         bOk_ant = bOk;
         bESC_ant = bESC;
@@ -858,7 +867,7 @@ void setup()
   rtc.setSQWRate(SQW_RATE_1);
   rtc.enableSQW(true);
   digitalWrite(pinBuzzer, LOW);
-  digitalWrite(pinVibracall, LOW);
+  digitalWrite(pinVibracall, HIGH);
 
   dht.begin();
 }
